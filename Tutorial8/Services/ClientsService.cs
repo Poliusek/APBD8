@@ -138,7 +138,7 @@ public class ClientsService : IClientsService
             VALUES (@id, @tripId, @date)", con);
             insert.Parameters.AddWithValue("@id", clientId);
             insert.Parameters.AddWithValue("@tripId", tripId);
-            insert.Parameters.AddWithValue("@date", DateTime.Now);
+            insert.Parameters.AddWithValue("@date", int.Parse(DateTime.Now.ToString("yyyyMMdd")));
             insert.ExecuteNonQuery();
         }
         return Task.FromResult(true);
