@@ -19,7 +19,7 @@ namespace Tutorial8.Controllers
         [HttpGet("{id}/trips")]
         public async Task<IActionResult> GetClientTrips(int id)
         {
-            var trips = await _clientsService.GetTrips();
+            var trips = await _clientsService.GetTrips(id);
             return Ok(trips);
         }
         

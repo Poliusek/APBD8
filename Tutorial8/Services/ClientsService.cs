@@ -7,16 +7,17 @@ public class ClientsService : IClientsService
 {
     private readonly string _connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=master;Integrated Security=True;";
     
-    public async Task<List<ClientsTrips>> GetTrips()
+    public async Task<List<ClientsTrips>> GetTrips(int id)
     {
         var clients = new List<ClientsTrips>();
 
-        string command = "SELECT IdClient,FirstName, LastName FROM Client";
+        string command = "SELECT IdClient,FirstName, LastName FROM Client where IdClient = @IdClient";
         
         using (SqlConnection conn = new SqlConnection(_connectionString))
         using (SqlCommand cmd = new SqlCommand(command, conn))
         {
             await conn.OpenAsync();
+            cmd.Parameters.AddWithValue("@IdClient", id);
 
             using (var reader = await cmd.ExecuteReaderAsync())
             {
@@ -92,7 +93,7 @@ public class ClientsService : IClientsService
 
     public Task<bool> CrateteClient(ClientsDTO client)
     {
-        string command = "INSERT INTO Client (FirstName, LastName, Email, PhoneNumber, Pesel) VALUES (@FirstName, @LastName, @Email, @PhoneNumber, @Pesel)";
+        string command = "INSERT INTO Client (FirstName, LastName, Email, Telephone, Pesel) VALUES (@FirstName, @LastName, @Email, @PhoneNumber, @Pesel)";
         
         using (SqlConnection conn = new SqlConnection(_connectionString))
         using (SqlCommand cmd = new SqlCommand(command, conn))
@@ -109,7 +110,7 @@ public class ClientsService : IClientsService
         return Task.FromResult(true);
     }
 
-    public async Task<bool> RegisterClientToTrip(int clientId, int tripId)
+    public Task<bool> RegisterClientToTrip(int clientId, int tripId)
     {
         using (var con = new SqlConnection(_connectionString))
         {
@@ -118,19 +119,19 @@ public class ClientsService : IClientsService
             var checkClient = new SqlCommand("SELECT COUNT(*) FROM Client WHERE IdClient = @id", con);
             checkClient.Parameters.AddWithValue("@id", clientId);
             if ((int)checkClient.ExecuteScalar() == 0)
-                return false;
+                return Task.FromResult(false);
 
             var checkTrip = new SqlCommand("SELECT MaxPeople FROM Trip WHERE IdTrip = @tripId", con);
             checkTrip.Parameters.AddWithValue("@tripId", tripId);
             var maxPeople = checkTrip.ExecuteScalar();
             if (maxPeople == null)
-                return false;
+                return Task.FromResult(false);
 
             var count = new SqlCommand("SELECT COUNT(*) FROM Client_Trip WHERE IdTrip = @tripId", con);
             count.Parameters.AddWithValue("@tripId", tripId);
             int current = (int)count.ExecuteScalar();
             if (current >= (int)maxPeople)
-                return false;
+                return Task.FromResult(false);
 
             var insert = new SqlCommand(@"
             INSERT INTO Client_Trip (IdClient, IdTrip, RegisteredAt)
@@ -140,7 +141,7 @@ public class ClientsService : IClientsService
             insert.Parameters.AddWithValue("@date", DateTime.Now);
             insert.ExecuteNonQuery();
         }
-        return true;
+        return Task.FromResult(true);
     }
 
     public async Task<bool> DeleteClientTrip(int id, int tripId)
